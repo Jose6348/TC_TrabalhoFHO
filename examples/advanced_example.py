@@ -5,7 +5,7 @@ df = DataFlow()
 
 # Exemplo 1: Ordenação e seleção de colunas
 pipeline1 = """
-carregar "examples/sales.csv";
+carregar "sales.csv";
 ordenar por vendas desc;
 selecionar regiao, produto, vendas;
 mostrar tabela;
@@ -16,7 +16,7 @@ df.executar(pipeline1)
 
 # Exemplo 2: Transformação de dados
 pipeline2 = """
-carregar "examples/sales.csv";
+carregar "sales.csv";
 transformar valor_total = vendas * quantidade;
 agrupar por regiao;
 agregar soma de valor_total como total_regiao;
@@ -29,7 +29,7 @@ df.executar(pipeline2)
 
 # Exemplo 3: Análise combinada
 pipeline3 = """
-carregar "examples/sales.csv";
+carregar "sales.csv";
 filtrar vendas > 1000;
 transformar margem_lucro = vendas * 0.3;
 agrupar por produto;
