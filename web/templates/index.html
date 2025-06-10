@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataFlow Analytics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #0d47a1;
+            --accent-color: #2962ff;
+            --background-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #546e7a;
+            --success-color: #00c853;
+            --warning-color: #ffd600;
+            --danger-color: #d50000;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1.2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .card {
+            margin-bottom: 1.5rem;
+            border: none;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 16px 16px 0 0 !important;
+            padding: clamp(1rem, 3vw, 1.5rem);
+            border: none;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .card-body {
+            padding: clamp(1.5rem, 4vw, 2rem);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+            border: none;
+            padding: clamp(0.8rem, 2vw, 1rem) clamp(1.5rem, 3vw, 2rem);
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(13, 71, 161, 0.3);
+        }
+
+        .pipeline-description {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: clamp(2rem, 5vw, 3rem);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .table {
+            background-color: white;
+            width: 100%;
+            margin-bottom: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+        }
+
+        .table th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            text-align: left;
+            padding: clamp(0.8rem, 2vw, 1.2rem);
+            border: none;
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .table td {
+            padding: clamp(0.8rem, 2vw, 1.2rem);
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(41, 98, 255, 0.05);
+        }
+
+        .result-table-container {
+            overflow-x: auto;
+            margin: 0;
+            padding: clamp(1rem, 3vw, 1.5rem);
+            background-color: white;
+            border-radius: 0 0 16px 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pipeline-icon {
+            font-size: clamp(2rem, 5vw, 2.5rem);
+            margin-bottom: clamp(1rem, 3vw, 1.5rem);
+            color: var(--accent-color);
+            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .alert {
+            border-radius: 12px;
+            padding: clamp(1rem, 3vw, 1.2rem);
+            margin: clamp(0.8rem, 2vw, 1rem);
+            border: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+
+        .dashboard-title {
+            color: var(--primary-color);
+            font-weight: 800;
+            margin-bottom: clamp(0.8rem, 2vw, 1rem);
+            text-align: center;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            letter-spacing: -0.5px;
+            padding: 0 clamp(1rem, 3vw, 2rem);
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: clamp(2rem, 5vw, 3.5rem);
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 clamp(1rem, 3vw, 2rem);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 0 clamp(1rem, 3vw, 2rem);
+            margin: 0 auto;
+        }
+
+        .row {
+            margin: 0 -0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .col-md-4 {
+            padding: 0 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .card-body {
+                padding: 1.2rem;
+            }
+
+            .btn-primary {
+                padding: 0.8rem 1.5rem;
+            }
+
+            .table-responsive {
+                margin: 0 -1rem;
+                padding: 0 1rem;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1600px;
+            }
+
+            .card {
+                margin-bottom: 2rem;
+            }
+        }
+
+        /* Estilo para números na tabela */
+        .table td:last-child {
+            font-family: 'Inter', monospace;
+            font-weight: 500;
+        }
+
+        /* Tooltip personalizado */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            font-size: clamp(0.8rem, 2vw, 0.85rem);
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        [data-tooltip]:hover:before {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-8px);
+        }
+
+        /* Ajustes para telas muito pequenas */
+        @media (max-width: 360px) {
+            .card-header {
+                padding: 0.8rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .btn-primary {
+                padding: 0.7rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .pipeline-icon {
+                font-size: 1.8rem;
+                margin-bottom: 0.8rem;
+            }
+        }
+
+        /* Ajustes para telas muito grandes */
+        @media (min-width: 1920px) {
+            .container {
+                max-width: 1800px;
+            }
+
+            .card {
+                margin-bottom: 2.5rem;
+            }
+
+            .dashboard-title {
+                font-size: 3.2rem;
+            }
+
+            .dashboard-subtitle {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Ajustes para orientação paisagem em dispositivos móveis */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .navbar {
+                padding: 0.8rem 0;
+                margin-bottom: 1rem;
+            }
+
+            .dashboard-title {
+                margin-bottom: 0.5rem;
+            }
+
+            .dashboard-subtitle {
+                margin-bottom: 1.5rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="fas fa-chart-line me-2"></i>
+                DataFlow Analytics Dashboard
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="dashboard-title">Análise de Vendas</h1>
+        <p class="dashboard-subtitle">Explore insights valiosos sobre suas vendas através de análises avançadas e visualizações interativas</p>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-sort-amount-down me-2"></i>
+                            Análise de Desempenho
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="pipeline-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <p class="pipeline-description">Identifique os produtos com melhor desempenho através de uma análise detalhada das vendas, ordenadas do maior para o menor valor.</p>
+                        <button class="btn btn-primary" onclick="executePipeline(1)" data-tooltip="Clique para executar a análise de desempenho">
+                            <i class="fas fa-play me-2"></i>Executar Análise
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Análise Regional
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="pipeline-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <p class="pipeline-description">Descubra o desempenho por região, com cálculos precisos do valor total considerando preço e volume de vendas.</p>
+                        <button class="btn btn-primary" onclick="executePipeline(2)" data-tooltip="Clique para executar a análise regional">
+                            <i class="fas fa-play me-2"></i>Executar Análise
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-percentage me-2"></i>
+                            Análise de Rentabilidade
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="pipeline-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <p class="pipeline-description">Avalie a rentabilidade dos produtos, calculando a margem de lucro média para vendas acima de R$ 1000.</p>
+                        <button class="btn btn-primary" onclick="executePipeline(3)" data-tooltip="Clique para executar a análise de rentabilidade">
+                            <i class="fas fa-play me-2"></i>Executar Análise
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem;">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-4">Processando análise...</p>
+        </div>
+
+        <div id="resultContainer" class="mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 id="resultTitle" class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>
+                        <span>Resultados da Análise</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="resultContent" class="result-table-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function executePipeline(pipelineNum) {
+            const loading = document.getElementById('loading');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultContent = document.getElementById('resultContent');
+
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            fetch(`/execute_pipeline/${pipelineNum}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    
+                    if (data.success) {
+                        resultTitle.innerHTML = `<i class="fas fa-table me-2"></i>${data.title}`;
+                        const html = data.html.replace('<table', '<table class="table table-striped table-hover table-bordered"');
+                        resultContent.innerHTML = `<div class="table-responsive">${html}</div>`;
+                        
+                        // Adiciona animação de fade in para a tabela
+                        resultContent.style.animation = 'fadeIn 0.6s ease-out';
+                    } else {
+                        resultTitle.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Erro`;
+                        resultContent.innerHTML = `<div class="alert alert-danger m-3">${data.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    resultContainer.style.display = 'block';
+                    resultTitle.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Erro`;
+                    resultContent.innerHTML = `<div class="alert alert-danger m-3">Erro ao executar o pipeline: ${error}</div>`;
+                });
+        }
+    </script>
+</body>
+</html> 
